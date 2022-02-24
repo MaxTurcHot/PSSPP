@@ -1,0 +1,98 @@
+----------------------------------------------------------
+-----                    HELP                        -----
+----------------------------------------------------------
+- Supported element types:
+		- CQUAD4
+		- CTRIA3
+
+- Supported Optistruct Solutions:
+		- Linear
+		- Random
+		- Sine
+		
+- Use different subcase id for each analysis. Otherwise, results couldn't be imported into hyperview in 1 model only.
+
+- Only elements exported to punch will be post processed
+
+- Punch Stress output needs to be in its PHASE form.
+
+- Once all load cases are solved, the *.hwascii files can be concatenated with a bash command to import results into hyperview.
+i.e. cat QS_*.hwascii TH_*.hwascii SSX_*.hwascii SSZ_*.hwascii SSZ_*.hwascii RDMX_*.hwascii RDMY_*.hwascii RDMZ_*.hwascii> concat_results.hwascii
+
+- Elements numbering is mandarory in order to post processing. Each elements within a part must have element id between a specified bracket.
+
+- Input file definition is defined as follow:
+part, minid, maxid, stress_type, ascii, SF1, SF2
+part: 			Part name 							(ASCII)
+minid: 			Minimum Element ID for the part 	(INTEGER)
+maxid: 			Maximum Element ID for the part 	(INTEGER)
+stress_type: 	1= Max Von Mises stress (Z1 or Z2)	(INTEGER)
+				2= Max Composite stress (Z1 or Z2)
+ascii:			0= No output						(INTEGER)
+				1= Output elements to *.hwascii file
+SF1:			if stress_type = 1					(DOUBLE)
+					Safety factor on yield
+				if stress_type = 2
+					Safety factor on ultimate
+SF2:			if stress_type = 1					(DOUBLE)
+					Safety factor on ultimate
+				if stress_type = 2
+					Safety factor on ultimate, same as SF1
+
+# is used to comment line if placed as the first caractere
+
+Example:
+# This line is in comment
+Bracket,530001,540000,1,3.86E+08,4.55E+08,0,1.65,1.98
+## This comment is not read by PSSPP
+Baseplate,100001,110000,2,1.79E+08,1.34E+08,0,1.98,1.98
+
+----- LINEAR TEMPLATE -----
+
+SUBCASE     2001
+  LABEL My Project
+  SUBTITLE  = My analysis
+ANALYSIS STATICS
+  SPC =     6001
+  LOAD =    1101
+  STRESS(PUNCH) = 2021
+  STRESS(H3D) = 2021
+  
+----- SINE TEMPLATE -----
+
+SUBCASE      4001
+  LABEL My Project
+ANALYSIS MFREQ
+  SPC =     6001
+  $ AVOID RERUNING MODAL FOR EVERY LOAD CASES
+  EIGVRETRIEVE = 51
+  METHOD(STRUCTURE) =     5001
+  RESVEC(UNITLOAD) = YES
+  FREQUENCY =     9001
+  SDAMPING(STRUCTURE) =     2101
+  DLOAD =     4001
+  STRESS = 2021
+  STRESS(PHASE,PUNCH) = 2021
+  
+----- RANDOM TEMPLATE -----
+
+SUBCASE     3001
+  LABEL Random_X
+ANALYSIS RANDOM
+  RANDOM =     1101
+  ELFORCE(H3D,RMS) = 2002
+  STRESS(H3D,RMS) = 2021
+  STRESS(PUNCH,RMS,PHASE) = 2021
+  ACCELERATION(H3D,PSDF) = 1001
+  ELFORCE(H3D,PSDF) = 2001
+$
+SUBCASE     3999
+  LABEL Frequency Content
+ANALYSIS MFREQ
+  SPC =     6001
+  $ AVOID RERUNING MODAL FOR EVERY LOAD CASES
+  EIGVRETRIEVE = 51
+  METHOD(STRUCTURE) =     5001
+  FREQUENCY =     9001
+  SDAMPING(STRUCTURE) =     2101
+  DLOAD =     4001
