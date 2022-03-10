@@ -1,4 +1,5 @@
 #!/usr/bin/python
+
 import sys
 import deffile_structure
 import stress_table
@@ -6,10 +7,13 @@ import math
 import cmath
 import os
 import logging
-version = "   0.3.0 "
+from datetime import datetime
+version = "   0.3.1 "
 filename = "strpch.log"
 helpfile = "/home/turcmax/.bin/strpch_help.txt"
 logging.basicConfig(filename=filename, encoding='utf-8', level=logging.INFO)
+logging.info("Starting: "+ str(datetime.now()))
+logging.info("Command arguments" + str(sys.argv))
 logging.info("Version "+ version)
 try:
     def print_ascii(fout_name, mos, eid):
@@ -458,46 +462,45 @@ try:
 
 
     if len(sys.argv) != 3 and len(sys.argv) != 4 :
-        fout = open(filename, "w")
-        fout.write("----------------------------------------------------------\n")
-        fout.write("----- Punch Stress Structural Post Processor (PSSPP) -----\n")
-        fout.write("----------------------------------------------------------\n")
-        fout.write("----- Version: " + str(version) + " ---------------------------------\n")
-        fout.write("----------------------------------------------------------\n")
-        fout.write("Error: 2 or 3 argument but be used as follow:\nstrpch.py definitionfile punchfile\nor\nstrpch.py definitionfile punchfile outfile\n")
-        fout.write("----------------------------------------------------------\n")
+        logging.error("Error 110001: Wrong argument number (3 or 4), consult doc")
     elif len(sys.argv) == 3:
-        punchstring = sys.argv[2]
         outbase = punchstring.split('.')
         fout = open(outbase[0] + ".strout", "w")
-        fout.write("----------------------------------------------------------\n")
-        fout.write("----- Punch Stress Structural Post Processor (PSSPP) -----\n")
-        fout.write("----------------------------------------------------------\n")
-        fout.write("----- Version: " + str(version) + " ---------------------------------\n")
-        fout.write("----------------------------------------------------------\n")
-        fin = open(str(sys.argv[1]), "r")
-        fpch = open(str(sys.argv[2]), "r")
-        process(fin, fout, fpch)
-        fin.close()
-        fpch.close()
     else:
-        punchstring = sys.argv[2]
         fout = open(str(sys.argv[3]) + ".strout", "w")
-        fout.write("----------------------------------------------------------\n")
-        fout.write("----- Punch Stress Structural Post Processor (PSSPP) -----\n")
-        fout.write("----------------------------------------------------------\n")
-        fout.write("----- Version: " + str(version) + " ---------------------------------\n")
-        fout.write("----------------------------------------------------------\n")
+        
+    punchstring = sys.argv[2]
+    fout.write("----------------------------------------------------------\n")
+    fout.write("----- Punch Stress Structural Post Processor (PSSPP) -----\n")
+    fout.write("----------------------------------------------------------\n")
+    fout.write("----- Version: " + str(version) + " ---------------------------------\n")
+    fout.write("----------------------------------------------------------\n")
+    try:
         fin = open(str(sys.argv[1]), "r")
+    except:
+        raise Exception('120001: MissingDefinitionFileError')
+    try:    
         fpch = open(str(sys.argv[2]), "r")
+    except:
+        raise Exception('130001: MissingPunchError')
+    try:
         process(fin, fout, fpch)
-        fin.close()
-        fpch.close()
-    with open(helpfile, 'r') as infile:
-        fout.write(infile.read())
-
+    except:
+        raise Exception('140001: ProcessError')
+    fin.close()
+    fpch.close()
+    try:
+        with open(helpfile, 'r') as infile:
+            fout.write(infile.read())
+    except:
+        logging.warning('150001: Help file unavailable, please make sure file exist')
     fout.close()
+    
+except Exception as inst:
+    logging.error(str(inst.args[0]))
 
-except:
-    logging.error('Error 10001: Top level error')
+else:
+    logging.info("Succesfull")
 
+finally:
+    logging.info("Ended: "+ str(datetime.now()))
